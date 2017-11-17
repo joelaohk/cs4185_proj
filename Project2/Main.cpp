@@ -19,7 +19,7 @@
 //
 //#define IMAGE_folder "C:\\Users\\Joe\\Desktop\\dataset\\"  // change to your folder location
 //#define IMAGE_LIST_FILE "dataset2"      //the dataset2 for detection
-//#define DETECTION_IMAGE 1               //change from 1 to 10 as the detection images to get your output
+//#define DETECTION_IMAGE 3               //change from 1 to 10 as the detection images to get your output
 //#define SEARCH_IMAGE "football.png"     //input information
 //
 //#define     DBL_MAX      1.7976931348623158e+308
@@ -83,9 +83,9 @@
 //													   //search the image by bouding box from diffrent scale, location, length-width ratio
 //	int w = db_gray_img.cols, h = db_gray_img.rows;
 //	//the starting scale in the search, you can change it to a smaller or larger scale
-//	int scale_w = 20, scale_h = 20;
+//	int scale_w = 10, scale_h = 10;
 //	//the ending scale in the search, you can change it to a smaller or larger scale
-//	int max_scale_w = 150, max_scale_h = 150;
+//	int max_scale_w = 400, max_scale_h = 400;
 //	//you can change the search step of scale and location in your code, 
 //	//which will influce both the perforance and speed, you may need a tradeoff
 //	int scale_step = 5, location_step = 5;
@@ -185,140 +185,55 @@
 //
 //	return 0;
 //}
-
-/**
-* CS4185/CS5185 Multimedia Technologies and Applications
-* Course Assignment
-* Image Retrieval Task
-*/
+//
 
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include <iostream>
 #include <stdio.h>
-#include <algorithm>
 
-using namespace std;
 using namespace cv;
 
-#define IMAGE_folder "C:\\Users\\Joe\\Desktop\\dataset\\"     // change to your folder location
-#define IMAGE_LIST_FILE "dataset1"         //the dataset1 for retrieval
-#define output_LIST_FILE "searchResults"  //the search results will store in this file
-#define SEARCH_IMAGE "999.jpg"   //change from 990 to 999 as the search images to get your output
-
-/**
-* @function main
-*/
-
-//Compute pixel-by-pixel difference
-double compareImgs(Mat img1, Mat img2)
-{
-	int w = img1.cols, h = img1.rows;
-	Mat new_img2;
-	resize(img2, new_img2, img1.size());
-	double sum = 0;
-	for (int i = 0; i < w; i++)for (int j = 0; j < h; j++)
-	{
-		sum += abs(img1.at<uchar>(j, i) - new_img2.at<uchar>(j, i));
-	}
-	return sum;
-}
-
+/** @function main */
 int main(int argc, char** argv)
 {
-	Mat src_input, gray_input;
-	Mat db_img, db_gray_img;
+	Mat src, src_gray;
 
-	const int filename_len = 900;
-	char tempname[filename_len];
+	/// Read the image
+	src = imread("C:\\Users\\Joe\\Desktop\\dataset\\dataset2\\5.jpg");
 
-	const int db_size = 1000;
-	int db_id = 0;
-
-	const int score_size = 10;   //change this to control return top n images
-	double minscore[score_size] = { DBL_MAX };
-	int minFilename[score_size];
-
-	char minimg_name[filename_len];
-	Mat min_img;
-
-	sprintf_s(tempname, filename_len, "%s\\%s\\%s", IMAGE_folder, IMAGE_LIST_FILE, SEARCH_IMAGE);
-	src_input = imread(tempname); // read input image
-	if (!src_input.data)
+	if (!src.data)
 	{
-		printf("Cannot find the input image!\n");
-		system("pause");
 		return -1;
 	}
-	imshow("Input", src_input);
-	cvtColor(src_input, gray_input, COLOR_BGR2GRAY); // Convert to grayscale
 
-													 //Read Database
-	for (db_id; db_id<db_size; db_id++) {
-		sprintf_s(tempname, filename_len, "%s\\%s\\%d.jpg", IMAGE_folder, IMAGE_LIST_FILE, db_id);
-		db_img = imread(tempname); // read database image
-		if (!db_img.data)
-		{
-			printf("Cannot find the database image number %d!\n", db_id + 1);
-			system("pause");
-			return -1;
-		}
-		cvtColor(db_img, db_gray_img, COLOR_BGR2GRAY); // Convert to grayscale
+	/// Convert it to gray
+	cvtColor(src, src_gray, CV_BGR2GRAY);
 
-													   // Apply the pixel-by-pixel comparison method
-		double tempScore = compareImgs(gray_input, db_gray_img);
+	/// Reduce the noise so we avoid false circle detection
+	GaussianBlur(src_gray, src_gray, Size(9, 9), 2, 2);
 
-		//store the top k min score ascending
-		for (int k = 0; k<score_size; k++) {
-			if (tempScore < minscore[k]) {
-				for (int k1 = score_size - 1; k1>k; k1--) {
-					minscore[k1] = minscore[k1 - 1];
-					minFilename[k1] = minFilename[k1 - 1];
-				}
-				minscore[k] = tempScore;
-				minFilename[k] = db_id;
-				break;
-			}
-		}
-	}
+	vector<Vec3f> circles;
 
-	//read the top k max score image and write them to the a designated folder
-	for (int k = 0; k<score_size; k++) {
-		sprintf_s(minimg_name, filename_len, "%s\\%s\\%d.jpg", IMAGE_folder, IMAGE_LIST_FILE, minFilename[k]);
-		min_img = imread(minimg_name);
-		printf("the most similar image %d is %d.jpg, the pixel-by-pixel difference is %f\n", k + 1, minFilename[k], minscore[k]);
-		sprintf_s(tempname, filename_len, "%s\\%s\\%d.jpg", IMAGE_folder, output_LIST_FILE, minFilename[k]);
-		imwrite(tempname, min_img);
-		//imshow(tempname,max_img);
-	}
-
-	//output your precesion and recall (the ground truth are from 990 to 999)
-	int count = 0;
-	for (int k = 0; k<score_size; k++) {
-		if (minFilename[k] >= 990 && minFilename[k] <= 999) {
-			count++;
-		}
-	}
-	double precision = (double)count / score_size;
-	double recall = (double)count / 10;
-
-	printf("the precision and the recall for %s is %.2f and %.2f.\n", SEARCH_IMAGE, precision, recall);
-
-	printf("Done \n");
-
-	// Wait for the user to press a key in the GUI window.
-	//Press ESC to quit
-	int keyValue = 0;
-	while (keyValue >= 0)
+	/// Apply the Hough Transform to find the circles
+	HoughCircles(src_gray, circles, CV_HOUGH_GRADIENT, 1, src_gray.rows / 8, 200, 100, 0, 0);
+	std::cout << circles.size() << std::endl;
+	/// Draw the circles detected
+	for (size_t i = 0; i < circles.size(); i++)
 	{
-		keyValue = cvWaitKey(0);
-
-		switch (keyValue)
-		{
-		case 27:keyValue = -1;
-			break;
-		}
+		
+		Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+		int radius = cvRound(circles[i][2]);
+		// circle center
+		circle(src, center, 3, Scalar(0, 255, 0), -1, 8, 0);
+		// circle outline
+		circle(src, center, radius, Scalar(0, 0, 255), 3, 8, 0);
 	}
 
+	/// Show your results
+	namedWindow("Hough Circle Transform Demo", CV_WINDOW_AUTOSIZE);
+	imshow("Hough Circle Transform Demo", src);
+
+	waitKey(0);
 	return 0;
 }
