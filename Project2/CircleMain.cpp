@@ -1,5 +1,6 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/objdetect/objdetect.hpp"
 #include <iostream>
 #include <stdio.h>
 
@@ -11,22 +12,22 @@ using namespace std;
 #define output_LIST_FILE "searchResults"  //the search results will store in this file
 #define SEARCH_IMAGE "football.png"   //change from 990 to 999 as the search images to get your output
 
-void drawHistImg(const Mat &src, Mat &dst) {
-	int histSize = 256;
-	float histMaxValue = 0;
-	for (int i = 0; i<histSize; i++) {
-		float tempValue = src.at<float>(i);
-		if (histMaxValue < tempValue) {
-			histMaxValue = tempValue;
-		}
-	}
-
-	float scale = (0.9 * 256) / histMaxValue;
-	for (int i = 0; i<histSize; i++) {
-		int intensity = static_cast<int>(src.at<float>(i)*scale);
-		line(dst, Point(i, 255), Point(i, 255 - intensity), Scalar(0));
-	}
-}
+//void drawHistImg(const Mat &src, Mat &dst) {
+//	int histSize = 256;
+//	float histMaxValue = 0;
+//	for (int i = 0; i<histSize; i++) {
+//		float tempValue = src.at<float>(i);
+//		if (histMaxValue < tempValue) {
+//			histMaxValue = tempValue;
+//		}
+//	}
+//
+//	float scale = (0.9 * 256) / histMaxValue;
+//	for (int i = 0; i<histSize; i++) {
+//		int intensity = static_cast<int>(src.at<float>(i)*scale);
+//		line(dst, Point(i, 255), Point(i, 255 - intensity), Scalar(0));
+//	}
+//}
 
 Mat calcHisto(Mat &hsl_src) {
 	Mat hist;
@@ -53,8 +54,9 @@ int main(int argc, char** argv)
 	cvtColor(football, footballHSL, CV_BGR2HLS);
 	Mat football_hist = calcHisto(footballHSL);
 
+
 	double b_sum = 0, w_sum = 0;
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < 3; i++) {
 		b_sum += football_hist.at<float>(i);
 		w_sum += football_hist.at<float>(245 + i);
 	}
@@ -86,12 +88,12 @@ int main(int argc, char** argv)
 		vector<Vec3f> circles;
 
 		/// Apply the Hough Transform to find the circles
-		double def = 1.5;
-		int centerDist = 100;
-		int param1 = 130;
-		int param2 = 50;
+		double def = 1.75;
+		int centerDist = 90;
+		int param1 = 197;
+		int param2 = 55;
 
-		HoughCircles(src_gray, circles, CV_HOUGH_GRADIENT, def, centerDist, param1, param2, 0, 0);
+		HoughCircles(src_gray, circles, CV_HOUGH_GRADIENT, def, centerDist, param1, param2, 0, min((double)src.rows, (double)src.cols)*0.5);
 
 		cout << db_id << "\t" << circles.size() << endl;
 
@@ -99,7 +101,7 @@ int main(int argc, char** argv)
 			//cout << db_id << "\t" << circles.size() << endl;
 			Mat srcCir = src.clone();
 			double bw_ratio_dist_min = DBL_MAX;
-			Mat min_bw_ratio_hist, min_bw_ratio_circle;
+			Mat min_bw_ratio_circle;
 			for (size_t i = 0; i < circles.size(); i++)
 			{
 				
@@ -131,20 +133,20 @@ int main(int argc, char** argv)
 				calcHist(&roi_hsl, 1, channel, Mat(), hist, 1, &histSize, &histRange, true, false);
 
 				double b_sum = 0, w_sum = 0;
-				for (int i = 0; i < 5; i++) {
+				for (int i = 0; i < 3; i++) {
 					b_sum += hist.at<float>(i);
 					w_sum += hist.at<float>(245 + i);
 				}
 				double bg = (roi_hsl.cols * roi_hsl.rows) - CV_PI * pow(((double)roi_hsl.cols) / 2, 2);
 
-				Mat showHistImg(100, 100, CV_8UC1, Scalar(255));
-				drawHistImg(hist, showHistImg);
+				/*Mat showHistImg(100, 100, CV_8UC1, Scalar(255));
+				drawHistImg(hist, showHistImg);*/
 				
-				double bw_ratio = b_sum / w_sum;
+				double bw_ratio = b_sum / (w_sum-bg);
 				cout << bw_ratio << endl;
 				if (abs(bw_ratio - football_bw_ratio) < bw_ratio_dist_min) {
 					bw_ratio_dist_min = bw_ratio;
-					min_bw_ratio_hist = showHistImg;
+					//min_bw_ratio_hist = showHistImg;
 					min_bw_ratio_circle = roi_hsl;
 				}
 				
@@ -152,9 +154,9 @@ int main(int argc, char** argv)
 			}
 			//printf("%d", bw_ratio_dist_min);
 			//printf("%d\t%d", min_bw_ratio_circle.size().width, min_bw_ratio_circle.size().height);
-			//imshow(tempname, min_bw_ratio_circle);
+			imshow(tempname, min_bw_ratio_circle);
 			
-			imshow(tempname, srcCir);
+			//imshow(tempname, srcCir);
 		}
 		
 	}

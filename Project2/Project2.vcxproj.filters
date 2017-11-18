@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CircleMain.cpp">
+    <ClCompile Include="detection_main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
