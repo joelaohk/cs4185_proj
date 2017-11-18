@@ -1,3 +1,22 @@
+/*
+*	CircleMain.cpp 
+*	CS4185 Project
+*	Created by LAO Choi Hin (54045244)
+*
+*/
+
+/************************************************************************************************************
+*	To Markers:																								*
+*	1.	This file is created just for experiment,															*
+*		it should not be considered as part of the project submission.										*
+*		But you may use it to see how I came up with the approaches used in the official submission.		*
+*																											*
+*	2.	This file may contains code from other sources and eventually applied in the official submission.	*
+*		Refereces to those sources have been made in the report.											*
+*																											*
+*	Thank you for your kind attention and understanding.													*
+************************************************************************************************************/
+
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/objdetect/objdetect.hpp"
@@ -8,7 +27,7 @@ using namespace cv;
 using namespace std;
 
 #define IMAGE_folder "C:\\Users\\Joe\\Desktop\\dataset"     // change to your folder location
-#define IMAGE_LIST_FILE "dataset2"         //the dataset1 for retrieval
+#define IMAGE_LIST_FILE "dataset1"         //the dataset1 for retrieval
 #define output_LIST_FILE "searchResults"  //the search results will store in this file
 #define SEARCH_IMAGE "football.png"   //change from 990 to 999 as the search images to get your output
 
@@ -64,9 +83,9 @@ int main(int argc, char** argv)
 	cout << football_bg << endl;
 	double football_bw_ratio = b_sum / (w_sum-football_bg);
 
-	int db_id = 1;
-	const int db_size = 10;
-	for (db_id; db_id <= db_size; db_id++) {
+	int db_id = 0;
+	const int db_size = 1000;
+	for (db_id; db_id < db_size; db_id++) {
 		sprintf_s(tempname, filename_len, "%s\\%s\\%d.jpg", IMAGE_folder, IMAGE_LIST_FILE, db_id);
 		Mat src, src_gray;
 

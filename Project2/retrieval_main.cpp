@@ -2,6 +2,8 @@
 * CS4185/CS5185 Multimedia Technologies and Applications
 * Course Assignment
 * Image Retrieval Task
+*
+* Program completed by LAO Choi Hin (54045244)
 */
 
 #include "opencv2/highgui/highgui.hpp"
