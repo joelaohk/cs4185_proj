@@ -1,6 +1,6 @@
 /*
 *	CircleMain.cpp 
-*	CS4185 Project
+*	Experimental file for CS4185 Project
 *	Created by LAO Choi Hin (54045244)
 *
 */
@@ -29,7 +29,7 @@ using namespace std;
 #define IMAGE_folder "C:\\Users\\Joe\\Desktop\\dataset"     // change to your folder location
 #define IMAGE_LIST_FILE "dataset1"         //the dataset1 for retrieval
 #define output_LIST_FILE "searchResults"  //the search results will store in this file
-#define SEARCH_IMAGE "football.png"   //change from 990 to 999 as the search images to get your output
+#define SEARCH_IMAGE 990   //change from 990 to 999 as the search images to get your output
 
 //void drawHistImg(const Mat &src, Mat &dst) {
 //	int histSize = 256;
@@ -48,6 +48,17 @@ using namespace std;
 //	}
 //}
 
+//Mat calcHisto(Mat &hsl_src) {
+//	Mat hist;
+//	int histSize = 256;
+//	int channel[] = { 1 };
+//	float range[] = { 0, 255 };
+//	const float* histRange = { range };
+//
+//	calcHist(&hsl_src, 1, channel, Mat(), hist, 1, &histSize, &histRange, true, false);
+//	return hist;
+//}
+
 Mat calcHisto(Mat &hsl_src) {
 	Mat hist;
 	int histSize = 256;
@@ -59,7 +70,6 @@ Mat calcHisto(Mat &hsl_src) {
 	return hist;
 }
 
-
 /** @function main */
 int main(int argc, char** argv)
 {
@@ -67,9 +77,20 @@ int main(int argc, char** argv)
 	const int filename_len = 900;
 	char tempname[filename_len];
 
-	sprintf_s(tempname, filename_len, "%s\\%s", IMAGE_folder, SEARCH_IMAGE);
-	Mat football, footballHSL;
+	sprintf_s(tempname, filename_len, "%s\\%s\\%s.jpg", IMAGE_folder, IMAGE_LIST_FILE, SEARCH_IMAGE);
+	Mat football, footballGray, footballHSL;
 	football = imread(tempname);
+
+	vector<Vec3f> circles;
+
+	/// Apply the Hough Transform to find the circles
+	double def = 1.25;
+	int centerDist = 900;
+	int param1 = 200;
+	int param2 = 60;
+
+	HoughCircles(footballGray, circles, CV_HOUGH_GRADIENT, def, centerDist, param1, param2, 0, 0);
+
 	cvtColor(football, footballHSL, CV_BGR2HLS);
 	Mat football_hist = calcHisto(footballHSL);
 
@@ -107,12 +128,12 @@ int main(int argc, char** argv)
 		vector<Vec3f> circles;
 
 		/// Apply the Hough Transform to find the circles
-		double def = 1.75;
-		int centerDist = 90;
-		int param1 = 197;
-		int param2 = 55;
+		double def = 1.25;
+		int centerDist = 900;
+		int param1 = 200;
+		int param2 = 60;
 
-		HoughCircles(src_gray, circles, CV_HOUGH_GRADIENT, def, centerDist, param1, param2, 0, min((double)src.rows, (double)src.cols)*0.5);
+		HoughCircles(src_gray, circles, CV_HOUGH_GRADIENT, def, centerDist, param1, param2, 0, 0);
 
 		cout << db_id << "\t" << circles.size() << endl;
 
@@ -156,6 +177,9 @@ int main(int argc, char** argv)
 					b_sum += hist.at<float>(i);
 					w_sum += hist.at<float>(245 + i);
 				}
+				if ((b_sum + w_sum) / (double)roi.area() > 0.5) {
+					cout << (b_sum + w_sum) / (double)roi.area() << endl;
+				}
 				double bg = (roi_hsl.cols * roi_hsl.rows) - CV_PI * pow(((double)roi_hsl.cols) / 2, 2);
 
 				/*Mat showHistImg(100, 100, CV_8UC1, Scalar(255));
@@ -173,9 +197,9 @@ int main(int argc, char** argv)
 			}
 			//printf("%d", bw_ratio_dist_min);
 			//printf("%d\t%d", min_bw_ratio_circle.size().width, min_bw_ratio_circle.size().height);
-			imshow(tempname, min_bw_ratio_circle);
+			//imshow(tempname, min_bw_ratio_circle);
 			
-			//imshow(tempname, srcCir);
+			imshow(tempname, srcCir);
 		}
 		
 	}

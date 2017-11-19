@@ -16,7 +16,7 @@
 using namespace std;
 using namespace cv;
 
-#define IMAGE_folder "C:\\Users\\Joe\\Desktop\\dataset"  // change to your folder location
+#define IMAGE_folder ".\\dataset"  // change to your folder location
 #define IMAGE_LIST_FILE "dataset2"      //the dataset2 for detection
 #define DETECTION_IMAGE 1               //change from 1 to 10 as the detection images to get your output
 #define SEARCH_IMAGE "football.png"     //input information
@@ -26,6 +26,12 @@ using namespace cv;
 /**
 * @function main
 */
+
+void errorMsg() {
+	printf("The input image is not found, please make sure:\n");
+	printf("\t 1.\tYou put the dataset folder next to the this program\n");
+	printf("\t 2.\tEvery image file is contained in its specified folder (0-999 in dataset1, 1-10 in dataset2, football.png in dataset)\n");
+}
 
 //function for generating the HSL histogram
 Mat calcHisto(Mat &hsl_src) {
@@ -79,11 +85,20 @@ int main(int argc, char** argv)
 	double score[score_size] = { DBL_MAX };
 	int start_x[score_size], start_y[score_size], end_x[score_size], end_y[score_size];  //store the start location and end location of the detection region (bounding box)
 
+	int query;
+	cout << "Please enter the number of the query image (1-10): ";
+	cin >> query;
+	while (query < 1 || query > 10) {
+		cout << "Your query number is not correct, please enter a number between 1 and 10, now try again" << endl;
+		cout << "Please enter the number of the query image (1-10): ";
+		cin >> query;
+	}
+
 	sprintf_s(tempname, filename_len, "%s\\%s", IMAGE_folder, SEARCH_IMAGE);
 	src_input = imread(tempname); // read input image
 	if (!src_input.data)
 	{
-		printf("Cannot find the input image!\n");
+		errorMsg();
 		system("pause");
 		return -1;
 	}
@@ -105,12 +120,13 @@ int main(int argc, char** argv)
 	//cout << football_bg << endl;
 	double football_bw_ratio = b_sum / (w_sum - football_bg);
 
+	
 	//Read detection IMAGE
-	sprintf_s(tempname, filename_len, "%s\\%s\\%d.jpg", IMAGE_folder, IMAGE_LIST_FILE, DETECTION_IMAGE);
+	sprintf_s(tempname, filename_len, "%s\\%s\\%d.jpg", IMAGE_folder, IMAGE_LIST_FILE, query);
 	db_img = imread(tempname); // read besearched image
 	if (!db_img.data)
 	{
-		printf("Cannot find the detection image number!\n");
+		errorMsg();
 		system("pause");
 		return -1;
 	}
@@ -256,17 +272,17 @@ int main(int argc, char** argv)
 	const int gt_end_x[10] = { 353,380,324,314,391,78,248,156,75,404 };
 	const int gt_end_y[10] = { 233,398,207,196,121,62,391,288,238,231 };
 	//draw ground truth bouding box
-	Point start = Point(gt_start_x[DETECTION_IMAGE - 1], gt_start_y[DETECTION_IMAGE - 1]);
-	Point end = Point(gt_end_x[DETECTION_IMAGE - 1], gt_end_y[DETECTION_IMAGE - 1]);
+	Point start = Point(gt_start_x[query - 1], gt_start_y[query - 1]);
+	Point end = Point(gt_end_x[query - 1], gt_end_y[query - 1]);
 	rectangle(db_img, start, end, Scalar(0, 0, 255));
-	int gt_area = (gt_end_x[DETECTION_IMAGE - 1] - gt_start_x[DETECTION_IMAGE - 1]) * (gt_end_y[DETECTION_IMAGE - 1] - gt_start_y[DETECTION_IMAGE - 1]);
+	int gt_area = (gt_end_x[query - 1] - gt_start_x[query - 1]) * (gt_end_y[query - 1] - gt_start_y[query - 1]);
 	//calculate top 10 IoU, and print the best one
 	double best_IoU = 0;
 	for (int k = 0; k<score_size; k++) {
-		int intersect_start_x = start_x[k]>gt_start_x[DETECTION_IMAGE - 1] ? start_x[k] : gt_start_x[DETECTION_IMAGE - 1];
-		int intersect_start_y = start_y[k]>gt_start_y[DETECTION_IMAGE - 1] ? start_y[k] : gt_start_y[DETECTION_IMAGE - 1];
-		int intersect_end_x = end_x[k]<gt_end_x[DETECTION_IMAGE - 1] ? end_x[k] : gt_end_x[DETECTION_IMAGE - 1];
-		int intersect_end_y = end_y[k]<gt_end_y[DETECTION_IMAGE - 1] ? end_y[k] : gt_end_y[DETECTION_IMAGE - 1];
+		int intersect_start_x = start_x[k]>gt_start_x[query - 1] ? start_x[k] : gt_start_x[query - 1];
+		int intersect_start_y = start_y[k]>gt_start_y[query - 1] ? start_y[k] : gt_start_y[query - 1];
+		int intersect_end_x = end_x[k]<gt_end_x[query - 1] ? end_x[k] : gt_end_x[query - 1];
+		int intersect_end_y = end_y[k]<gt_end_y[query - 1] ? end_y[k] : gt_end_y[query - 1];
 
 		int your_area = (end_x[k] - start_x[k]) * (end_y[k] - start_y[k]);
 		int intersect_area = 0;
@@ -283,7 +299,7 @@ int main(int argc, char** argv)
 
 	//show and store the detection reuslts
 	imshow("Best Match Image", db_img);
-	sprintf_s(tempname, filename_len, "%s\\%s\\detection_results\\%d.jpg", IMAGE_folder, IMAGE_LIST_FILE, DETECTION_IMAGE);
+	sprintf_s(tempname, filename_len, "%s\\%s\\detection_results\\%d.jpg", IMAGE_folder, IMAGE_LIST_FILE, query);
 	imwrite(tempname, db_img);
 
 	printf("Done \n");
